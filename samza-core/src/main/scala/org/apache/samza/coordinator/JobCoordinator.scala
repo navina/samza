@@ -125,9 +125,9 @@ object JobModelManager extends Logging {
     val jobModel: JobModel = initializeJobModel(config, changelogManager, localityManager, streamMetadataCache)
     jobModelRef.set(jobModel)
 
-    val server = new HttpServer
-    server.addServlet("/*", new JobServlet(jobModelRef))
-    currentJobModelManager = new JobModelManager(jobModel, server, streamPartitionCountMonitor)
+//    val server = new HttpServer
+//    server.addServlet("/*", new JobServlet(jobModelRef))
+    currentJobModelManager = new JobModelManager(jobModel, null, streamPartitionCountMonitor)
     currentJobModelManager
   }
 
@@ -185,7 +185,7 @@ object JobModelManager extends Logging {
    * The method intializes the jobModel and returns it to the caller.
    * Note: refreshJobModel can be used as a lambda for JobModel generation in the future.
    */
-  private def initializeJobModel(config: Config,
+  def initializeJobModel(config: Config,
                                  changelogManager: ChangelogPartitionManager,
                                  localityManager: LocalityManager,
                                  streamMetadataCache: StreamMetadataCache): JobModel = {
@@ -207,8 +207,9 @@ object JobModelManager extends Logging {
     }
     // We don't need to start() localityManager as they share the same instances with checkpoint and changelog managers.
     // TODO: This code will go away with refactoring - SAMZA-678
-
-    localityManager.start()
+    if (localityManager != null) {
+      localityManager.start()
+    }
 
     // Generate the jobModel
     def jobModelGenerator(): JobModel = refreshJobModel(config,

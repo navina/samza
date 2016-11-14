@@ -892,4 +892,8 @@ class SamzaContainer(
       hostStatisticsMonitor.stop()
     }
   }
+
+  def stop: Unit = {
+
+  }
 }
