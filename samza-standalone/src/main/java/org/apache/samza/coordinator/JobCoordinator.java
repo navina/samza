@@ -32,6 +32,6 @@ public interface JobCoordinator {
    */
   JobModel getJobModel();
 
-  void onBecomeLeader();
+//  void onBecomeLeader();
   void setJobModelChangeListener (JobModelListener listener);
 }

@@ -11,6 +11,7 @@ public class ZkPaths {
 
   private static final String PROCESSORS_PATH = "/processors";
   public static final String LEADER_PATH = "/leader";
+  private final String JOBMODELVERSION = "/jobModelVersion";
 
   public String getProcessorsPath() {
     return String.format("/%s-%s%s", jobName, jobId, PROCESSORS_PATH);
@@ -18,5 +19,9 @@ public class ZkPaths {
 
   public String getLeaderPath() {
     return String.format("/%s-%s%s", jobName, jobId, LEADER_PATH);
+  }
+
+  public String getJobModelVersionPath() {
+    return String.format("/%s-%s%s", jobName, jobId, JOBMODELVERSION);
   }
 }

@@ -25,15 +25,11 @@ public class StreamProcessor implements JobModelListener {
   }
 
   @Override
-  public void onJobModelUpdate(JobModel jobModel) {
+  public void onJobModelUpdate() {
     if (container != null) {
       container.stop();
     }
-
-    if (jobModel == null) {
-      jobModel = coordinator.getJobModel(); // Put Barrier in here?? Blocking call? // Should getJobModel be a part of separate reader interface ??
-    }
-
+    JobModel jobModel = coordinator.getJobModel(); // Put Barrier in here?? Blocking call? // Should getJobModel be a part of separate reader interface ??
     container = SamzaContainer.apply(jobModel.getContainers().get(processorId), jobModel, new JmxServer());
     new Thread(new Runnable() {
       @Override

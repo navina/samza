@@ -1,5 +1,8 @@
 package org.apache.samza.coordinator.zk;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -9,19 +12,28 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class DebounceTimer {
+  public static final Logger LOGGER = LoggerFactory.getLogger(DebounceTimer.class);
+
   private final ScheduledExecutorService scheduledExecutorService =
       Executors.newScheduledThreadPool(1);
   private ScheduledFuture futureHandle = null;
   private final int debounceTimeMs;
-  private List<String> memberList = null;
   private final ReadyToCreateJobModelListener listener;
 
-  DebounceTimer (int debounceTimeMs, List<String> initialMemberList, final ReadyToCreateJobModelListener listener) {
+  DebounceTimer (int debounceTimeMs, final ReadyToCreateJobModelListener listener) {
     this.debounceTimeMs = debounceTimeMs;
-    this.memberList = initialMemberList;
     this.listener = listener;
-    // Schedule delayed task
-    this.futureHandle = scheduledExecutorService.schedule(
+  }
+
+  // Invoked when group membership changes
+  void resetTimer() {
+    if (futureHandle != null && !futureHandle.isDone()) {
+      boolean cancelResponse = futureHandle.cancel(false);
+      if (!cancelResponse) {
+        LOGGER.warn("Timer reset may not have cancelled JobModel generation. Expect another round of JobModel re-generation");
+      }
+    }
+    futureHandle = scheduledExecutorService.schedule(
         new Runnable() {
           @Override
           public void run() {
@@ -32,10 +44,6 @@ public class DebounceTimer {
         TimeUnit.MILLISECONDS
     );
 
-  }
-
-  // Invoked when group membership changes
-  void resetTimer() {
    /*
    if (membership changed from prevMemberList) {
     if (alreadyScheduledTask) {
@@ -51,6 +59,7 @@ public class DebounceTimer {
 
   void stopTimer() {
     // shutdown executor service
+    scheduledExecutorService.shutdown();
   }
 
 }
