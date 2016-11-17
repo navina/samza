@@ -19,6 +19,9 @@
 
 package org.apache.samza.config;
 
+import org.apache.samza.system.SystemFactory;
+import org.apache.samza.util.Util;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -59,5 +62,12 @@ public class JavaSystemConfig extends MapConfig {
       }
     }
     return systemNames;
+  }
+
+  public SystemFactory getSystemFactoryObject(String factoryClassName) {
+    if (factoryClassName == null) {
+      throw new ConfigException("Factory not defined for System!");
+    }
+    return Util.<SystemFactory>getObj(factoryClassName);
   }
 }

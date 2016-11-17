@@ -22,9 +22,13 @@ package org.apache.samza.config
 
 import java.io.File
 
-import org.apache.samza.container.grouper.stream.GroupByPartitionFactory
-import org.apache.samza.system.{RegexSystemStreamPartitionMatcher, SystemStreamPartitionMatcher}
-import org.apache.samza.util.Logging
+import org.apache.samza.container.grouper.stream.{SystemStreamPartitionGrouper, SystemStreamPartitionGrouperFactory, GroupByPartitionFactory}
+import org.apache.samza.system.{StreamMetadataCache, SystemStream, SystemStreamPartition, SystemStreamPartitionMatcher}
+import org.apache.samza.util.{Logging, Util}
+
+import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
+
 
 object JobConfig {
   // job config constants
@@ -177,5 +181,52 @@ class JobConfig(config: Config) extends ScalaMapConfig(config) with Logging {
   def getSingleThreadMode = getOption(JobConfig.JOB_CONTAINER_SINGLE_THREAD_MODE) match {
     case Some(mode) => mode.toBoolean
     case _ => false
+  }
+
+  /**
+   * For each input stream specified in config, exactly determine its
+   * partitions, returning a set of SystemStreamPartitions containing them all.
+   */
+  def getInputStreamPartitions(
+    inputSystemStreams: Set[SystemStream],
+    streamMetadataCache: StreamMetadataCache): Set[SystemStreamPartition] = {
+    // Get the set of partitions for each SystemStream from the stream metadata
+    streamMetadataCache
+      .getStreamMetadata(inputSystemStreams, true)
+      .flatMap {
+        case (systemStream, metadata) =>
+          metadata
+            .getSystemStreamPartitionMetadata
+            .keys
+            .map(new SystemStreamPartition(systemStream, _))
+      }.toSet
+  }
+
+  def getMatchedInputStreamPartitions(allSsp: Set[SystemStreamPartition]): Set[SystemStreamPartition] = {
+    getSSPMatcherClass match {
+      case Some(s) => {
+        val jfr = getSSPMatcherConfigJobFactoryRegex.r
+        getStreamJobFactoryClass match {
+          case Some(jfr(_*)) => {
+            info("before match: allSystemStreamPartitions.size = %s" format (allSsp.size))
+            val sspMatcher = Util.getObj[SystemStreamPartitionMatcher](s)
+            val matchedPartitions = sspMatcher.filter(allSsp, config).asScala.toSet
+            // Usually a small set hence ok to log at info level
+            info("after match: matchedPartitions = %s" format (matchedPartitions))
+            matchedPartitions
+          }
+          case _ => allSsp
+        }
+      }
+      case _ => allSsp
+    }
+  }
+
+  /**
+   * Gets a SystemStreamPartitionGrouper object from the configuration.
+   */
+  def getSystemStreamPartitionGrouper(): SystemStreamPartitionGrouper = {
+    val factory = Util.getObj[SystemStreamPartitionGrouperFactory](getSystemStreamPartitionGrouperFactory)
+    factory.getSystemStreamPartitionGrouper(config)
   }
 }

@@ -32,8 +32,10 @@ public class Driver {
         put("task.name.grouper.factory", "org.apache.samza.container.grouper.task.GroupByContainerWithoutBalanceFactory");
       }
     };
-    JobCoordinator coordinator = new ZkCoordinator("zkjob", "001", "localhost:2181", new MapConfig(mapConfig));
-    final StreamProcessor processor = new StreamProcessor(Integer.valueOf(args[0]), coordinator);
+    int processorId = Integer.valueOf(args[0]);
+    int httpPort = 5555 + processorId;
+    JobCoordinator coordinator = new ZkCoordinator("zkjob", "001", "localhost:2181", new MapConfig(mapConfig), String.valueOf(httpPort));
+    final StreamProcessor processor = new StreamProcessor(processorId, coordinator);
     processor.start();
     Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
       @Override
