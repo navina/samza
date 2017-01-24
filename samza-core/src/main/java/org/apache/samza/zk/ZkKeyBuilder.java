@@ -29,9 +29,9 @@ public class ZkKeyBuilder {
 
   public static final String JOBMODEL_VERSION_PATH = "jobModelVersion";
 
-  public ZkKeyBuilder() {
-    this("");
-  }
+//  public ZkKeyBuilder() {
+  //  this("");
+  //}
 
   public ZkKeyBuilder(String pathPrefix) {
     this.pathPrefix = pathPrefix;

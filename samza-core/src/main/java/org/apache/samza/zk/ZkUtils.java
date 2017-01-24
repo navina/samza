@@ -58,9 +58,9 @@ public class ZkUtils {
   private final ScheduleAfterDebounceTime debounceTimer;
   private final String processorId;
 
-  public ZkUtils(String zkConnectString, ScheduleAfterDebounceTime debounceTimer, String processorId) {
-    this(new ZkKeyBuilder(), zkConnectString, debounceTimer, processorId, ZkConfig.DEFAULT_SESSION_TIMEOUT_MS, ZkConfig.DEFAULT_CONNECTION_TIMEOUT_MS);
-  }
+  //public ZkUtils(String zkConnectString, ScheduleAfterDebounceTime debounceTimer, String processorId) {
+  //  this(new ZkKeyBuilder(), zkConnectString, debounceTimer, processorId, ZkConfig.DEFAULT_SESSION_TIMEOUT_MS, ZkConfig.DEFAULT_CONNECTION_TIMEOUT_MS);
+  //}
 
   public ZkUtils(ZkKeyBuilder zkKeyBuilder, String zkConnectString, ScheduleAfterDebounceTime debounceTimer, String processorId, int sessionTimeoutMs, int connectionTimeoutMs) {
     this.keyBuilder = zkKeyBuilder;
@@ -131,7 +131,7 @@ public class ZkUtils {
     try {
       // We assume (needs to be verified) that this call will FAIL if the node already exists!!!!!!!!
       ObjectMapper mmapper = SamzaObjectMapper.getObjectMapper();
-      String jobModelStr = mmapper.writeValueAsString(jobModel);
+      String jobModelStr = mmapper.writerWithDefaultPrettyPrinter().writeValueAsString(jobModel);
       LOG.info("pid=" + processorId + " jobModelAsString=" + jobModelStr);
       zkClient.createPersistent(keyBuilder.getJobModelPath(jobModelVersion), jobModelStr);
       LOG.info("wrote jobModel path =" + keyBuilder.getJobModelPath(jobModelVersion));

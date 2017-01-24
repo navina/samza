@@ -32,6 +32,11 @@ import java.util.Map;
 import java.util.Set;
 
 
+/**
+ * Simple grouper.
+ * It exposes two group methods - one that assumes sequential container numbers and one that gets a set of container
+ * IDs as an argument. Please note - this first implementation ignores locality information.
+ */
 public class SimpleGroupByContainerCount implements TaskNameGrouper {
   private final int startContainerCount;
   public SimpleGroupByContainerCount() {
