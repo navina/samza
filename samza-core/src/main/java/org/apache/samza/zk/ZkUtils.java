@@ -58,9 +58,9 @@ public class ZkUtils {
   private final ScheduleAfterDebounceTime debounceTimer;
   private final String processorId;
 
-  //public ZkUtils(String zkConnectString, ScheduleAfterDebounceTime debounceTimer, String processorId) {
-  //  this(new ZkKeyBuilder(), zkConnectString, debounceTimer, processorId, ZkConfig.DEFAULT_SESSION_TIMEOUT_MS, ZkConfig.DEFAULT_CONNECTION_TIMEOUT_MS);
-  //}
+  public ZkUtils(String zkConnectString, ScheduleAfterDebounceTime debounceTimer, String processorId) {
+    this(new ZkKeyBuilder(), zkConnectString, debounceTimer, processorId, ZkConfig.DEFAULT_SESSION_TIMEOUT_MS, ZkConfig.DEFAULT_CONNECTION_TIMEOUT_MS);
+  }
 
   public ZkUtils(ZkKeyBuilder zkKeyBuilder, String zkConnectString, ScheduleAfterDebounceTime debounceTimer, String processorId, int sessionTimeoutMs, int connectionTimeoutMs) {
     this.keyBuilder = zkKeyBuilder;
