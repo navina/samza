@@ -62,7 +62,7 @@ public class ZkJobCoordinator implements JobCoordinator, ZkControllerListener {
   private final Config config;
   private final CoordinationUtils coordinationUtils;
 
-  private JobModel newJobModel;
+  private JobModel newJobModel; // keep local copy of jobModel for getJobModel().
  
   public ZkJobCoordinator(String processorId, Config config, ScheduleAfterDebounceTime debounceTimer,
                           SamzaContainerController containerController) {
