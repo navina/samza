@@ -17,5 +17,4 @@
 language: java
 
 script:
-	- echo $GRADLE_HOME
-	- ./gradlew clean build
+  - ./gradlew clean build
