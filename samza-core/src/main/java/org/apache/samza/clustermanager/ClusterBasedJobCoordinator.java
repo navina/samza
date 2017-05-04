@@ -141,6 +141,7 @@ public class ClusterBasedJobCoordinator {
     // set up JmxServer (if jmx is enabled)
     if (isJmxEnabled) {
       jmxServer = new JmxServer();
+      jmxServer.start();
       state.jmxUrl = jmxServer.getJmxUrl();
       state.jmxTunnelingUrl = jmxServer.getTunnelingJmxUrl();
     } else {

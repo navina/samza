@@ -36,7 +36,7 @@ class TestJmxServer extends Logging {
 
     try {
       jmxServer = new JmxServer
-
+      jmxServer.start()
       println("JmxServer = %s" format jmxServer)
       println("Got jmxServer on port " + jmxServer.getRegistryPort)
 

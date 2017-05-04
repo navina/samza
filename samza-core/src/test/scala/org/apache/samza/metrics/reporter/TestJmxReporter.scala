@@ -64,7 +64,7 @@ class TestJmxReporter {
   import TestJmxReporter.url
 
   // TODO: Fix in SAMZA-1196
-  //@Test
+//  @Test
   def testJmxReporter {
     val registry = new MetricsRegistryMap
     val jvm = new JvmMetrics(registry)

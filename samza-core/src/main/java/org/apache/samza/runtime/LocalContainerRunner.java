@@ -66,9 +66,9 @@ public class LocalContainerRunner extends AbstractApplicationRunner {
 
   @Override
   public void run(StreamApplication streamApp) {
-    JmxServer jmxServer = null;
+    JmxServer jmxServer = new JmxServer();
     try {
-      jmxServer = new JmxServer();
+      jmxServer.start();
       ContainerModel containerModel = jobModel.getContainers().get(containerId);
       Object taskFactory = TaskFactoryUtil.createTaskFactory(config, streamApp, this);
 
@@ -100,9 +100,7 @@ public class LocalContainerRunner extends AbstractApplicationRunner {
 
       container.run();
     } finally {
-      if (jmxServer != null) {
-        jmxServer.stop();
-      }
+      jmxServer.stop();
     }
     if (containerException != null) {
       log.error("Container stopped with Exception. Exiting process now.", containerException);

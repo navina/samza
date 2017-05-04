@@ -65,6 +65,7 @@ public class StreamProcessor {
   private final Map<String, MetricsReporter> customMetricsReporter;
   private final Config config;
   private final long taskShutdownMs;
+  private final JmxServer jmxServer;
 
   private ExecutorService executorService;
 
@@ -131,6 +132,7 @@ public class StreamProcessor {
     this.jobCoordinator = jobCoordinator;
     this.jobCoordinatorListener = createJobCoordinatorListener();
     this.jobCoordinator.setListener(jobCoordinatorListener);
+    this.jmxServer = new JmxServer();
   }
 
   private StreamProcessor(String processorId, Config config, Map<String, MetricsReporter> customMetricsReporters,
@@ -142,6 +144,7 @@ public class StreamProcessor {
     this.processorListener = processorListener;
     this.jobCoordinator = getJobCoordinator(processorId);
     this.jobCoordinator.setListener(createJobCoordinatorListener());
+    this.jmxServer = new JmxServer();
   }
 
   /**
@@ -153,6 +156,7 @@ public class StreamProcessor {
    * </p>
    */
   public void start() {
+    jmxServer.start();
     jobCoordinator.start();
   }
 
@@ -198,6 +202,12 @@ public class StreamProcessor {
       jobCoordinator.stop();
     }
 
+    try {
+      jmxServer.stop();
+      LOGGER.info("Stopped Jmx Server");
+    } catch (Throwable e) {
+      LOGGER.error("Exception while stopping jmx server {}", e);
+    }
   }
 
   SamzaContainer createSamzaContainer(ContainerModel containerModel, int maxChangelogStreamPartitions, JmxServer jmxServer) {
@@ -299,7 +309,7 @@ public class StreamProcessor {
           container = createSamzaContainer(
               jobModel.getContainers().get(processorId),
               jobModel.maxChangeLogStreamPartitions,
-              new JmxServer());
+              jmxServer);
           container.setContainerListener(containerListener);
           LOGGER.info("Starting container " + container.toString());
           executorService = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()

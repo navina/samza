@@ -39,6 +39,7 @@ import javax.management.remote.{ JMXConnectorServerFactory, JMXServiceURL }
  */
 class JmxServer(requestedPort: Int) extends Logging {
   val hostname = Util.getLocalHost.getHostName
+  var isServerRunning: Boolean = false
 
   def this() = this(0)
 
@@ -98,10 +99,14 @@ class JmxServer(requestedPort: Int) extends Logging {
     (jmxServer, url.toString, registryPort, serverPort)
   }
 
-  jmxServer.start
-  startupLog("Started " + toString)
-  startupLog("If you are tunneling, you might want to try " + toString.replaceAll("localhost", hostname))
-
+  def start(): Unit = {
+    if (!isServerRunning) {
+      jmxServer.start
+      isServerRunning = true
+      startupLog("Started " + toString)
+      startupLog("If you are tunneling, you might want to try " + toString.replaceAll("localhost", hostname))
+    }
+  }
   /**
    * Get RMI registry port
    * @return RMI port
@@ -123,7 +128,12 @@ class JmxServer(requestedPort: Int) extends Logging {
   /**
    * Stop the JMX server. Must be called at program end or will prevent termination.
    */
-  def stop = jmxServer.stop
+  def stop = {
+    if (isServerRunning) {
+      jmxServer.stop
+      isServerRunning = false
+    }
+  }
 
   override def toString = "JmxServer registry port=%d server port=%d url=%s" format (getRegistryPort, getServerPort, getJmxUrl)
 
