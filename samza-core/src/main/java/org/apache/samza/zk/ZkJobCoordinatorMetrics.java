@@ -16,23 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.samza.zk;
 
-import org.apache.samza.config.Config;
-import org.apache.samza.coordinator.JobCoordinator;
-import org.apache.samza.coordinator.JobCoordinatorFactory;
-import org.apache.samza.metrics.MetricsRegistryMap;
+import org.apache.samza.metrics.Counter;
+import org.apache.samza.metrics.MetricsBase;
+import org.apache.samza.metrics.MetricsRegistry;
 
-public class ZkJobCoordinatorFactory implements JobCoordinatorFactory {
-  /**
-   * Method to instantiate an implementation of JobCoordinator
-   *
-   * @param config - configs relevant for the JobCoordinator TODO: Separate JC related configs into a "JobCoordinatorConfig"
-   * @return An instance of IJobCoordinator
-   */
-  @Override
-  public JobCoordinator getJobCoordinator(Config config) {
-    return new ZkJobCoordinator(config, new MetricsRegistryMap("zkJobCoordinator"));
+public class ZkJobCoordinatorMetrics extends MetricsBase {
+  public final Counter processorsChanged = newCounter("processors-changed");
+
+  public ZkJobCoordinatorMetrics(MetricsRegistry registry) {
+    super(registry);
   }
+
 }

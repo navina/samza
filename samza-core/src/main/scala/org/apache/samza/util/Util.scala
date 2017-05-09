@@ -424,4 +424,8 @@ object Util extends Logging {
       case _ => config
     }
   }
+
+  def getFormattedProcessorName(processorId: String): String = {
+    "samza-container-%s" format processorId
+  }
 }

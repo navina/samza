@@ -21,6 +21,7 @@ package org.apache.samza.zk;
 import org.apache.samza.config.ApplicationConfig;
 import org.apache.samza.config.Config;
 import org.apache.samza.config.ConfigException;
+import org.apache.samza.config.MetricsConfig;
 import org.apache.samza.coordinator.BarrierForVersionUpgrade;
 import org.apache.samza.coordinator.CoordinationUtils;
 import org.apache.samza.coordinator.JobCoordinator;
@@ -29,9 +30,14 @@ import org.apache.samza.coordinator.JobModelManager;
 import org.apache.samza.coordinator.LeaderElector;
 import org.apache.samza.coordinator.LeaderElectorListener;
 import org.apache.samza.job.model.JobModel;
+import org.apache.samza.metrics.MetricsRegistry;
+import org.apache.samza.metrics.MetricsRegistryMap;
+import org.apache.samza.metrics.MetricsReporter;
 import org.apache.samza.runtime.ProcessorIdGenerator;
 import org.apache.samza.system.StreamMetadataCache;
 import org.apache.samza.util.ClassLoaderHelper;
+import org.apache.samza.util.MetricsReporterLoader;
+import org.apache.samza.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * JobCoordinator for stand alone processor managed via Zookeeper.
@@ -50,10 +57,12 @@ public class ZkJobCoordinator implements JobCoordinator, ZkControllerListener {
   // with locality. Since host-affinity is not yet implemented, this can be fixed as part of SAMZA-1197
   private static final int METADATA_CACHE_TTL_MS = 5000;
 
+  private final ZkJobCoordinatorMetrics jcMetrics;
+  private final Map<String, MetricsReporter> metricsReporters;
+
   private final ZkUtils zkUtils;
   private final String processorId;
   private final ZkController zkController;
-
   private final Config config;
   private final CoordinationUtils coordinationUtils;
 
@@ -62,9 +71,13 @@ public class ZkJobCoordinator implements JobCoordinator, ZkControllerListener {
   private JobCoordinatorListener coordinatorListener = null;
   private JobModel newJobModel;
 
-  public ZkJobCoordinator(Config config) {
+  public ZkJobCoordinator(Config config, MetricsRegistry registry) {
     this.config = config;
     this.processorId = createProcessorId(config);
+    this.jcMetrics = new ZkJobCoordinatorMetrics(registry);
+
+    this.metricsReporters = MetricsReporterLoader.getMetricsReporters(
+        new MetricsConfig(config), Util.getFormattedProcessorName(processorId));
     this.coordinationUtils = new ZkCoordinationServiceFactory()
         .getCoordinationService(new ApplicationConfig(config).getGlobalAppId(), String.valueOf(processorId), config);
     this.zkUtils = ((ZkCoordinationUtils) coordinationUtils).getZkUtils();
@@ -75,6 +88,10 @@ public class ZkJobCoordinator implements JobCoordinator, ZkControllerListener {
 
   @Override
   public void start() {
+    metricsReporters.forEach((name, reporter) -> {
+        LOG.debug("Starting Metrics Reporter " +  name);
+        reporter.start();
+      });
     streamMetadataCache = StreamMetadataCache.apply(METADATA_CACHE_TTL_MS, config);
     debounceTimer = new ScheduleAfterDebounceTime(throwable -> {
         LOG.error("Received exception from in JobCoordinator Processing!", throwable);
@@ -92,6 +109,10 @@ public class ZkJobCoordinator implements JobCoordinator, ZkControllerListener {
     debounceTimer.stopScheduler();
     zkController.stop();
 
+    metricsReporters.forEach((name, reporter) -> {
+        LOG.debug("Stopping Metrics Reporter " + name);
+        reporter.stop();
+      });
     if (coordinatorListener != null) {
       coordinatorListener.onCoordinatorStop();
     }

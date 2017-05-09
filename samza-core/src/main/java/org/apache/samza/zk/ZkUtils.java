@@ -119,10 +119,6 @@ public class ZkUtils {
     }
   }
 
-  public synchronized String getEphemeralPath() {
-    return ephemeralPath;
-  }
-
   /**
    * Method is used to get the <i>sorted</i> list of currently active/registered processors (znodes)
    *
@@ -145,7 +141,7 @@ public class ZkUtils {
   String readProcessorData(String fullPath) {
     String data = zkClient.<String>readData(fullPath, true);
     if (data == null) {
-      throw new SamzaException(String.format("Cannot read ZK node:", fullPath));
+      throw new SamzaException(String.format("Cannot read ZK node: %s", fullPath));
     }
     return data;
   }
@@ -173,7 +169,6 @@ public class ZkUtils {
         processorIds.add(new ProcessorData(readProcessorData(fullPath)).getProcessorId());
       }
 
-      LOG.info("Found these children - " + znodeIds);
       LOG.info("Found these processorIds - " + processorIds);
     }
     return processorIds;

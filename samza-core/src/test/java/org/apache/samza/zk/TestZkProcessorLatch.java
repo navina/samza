@@ -58,7 +58,7 @@ public class TestZkProcessorLatch {
   public void testSetup() {
     testZkConnectionString = "127.0.0.1:" + zkServer.getPort();
     try {
-      testZkUtils = getZkUtilsWithNewClient("testZkUtils");
+      testZkUtils = getZkUtilsWithNewClient();
     } catch (Exception e) {
       Assert.fail("Client connection setup failed. Aborting tests..");
     }
@@ -80,7 +80,7 @@ public class TestZkProcessorLatch {
     return new Runnable() {
       @Override
       public void run() {
-        ZkUtils zkUtils = getZkUtilsWithNewClient(participantId);
+        ZkUtils zkUtils = getZkUtilsWithNewClient();
         zkUtils.connect();
         ZkProcessorLatch latch = new ZkProcessorLatch(
             latchSize, latchId, participantId, zkUtils);
@@ -133,7 +133,7 @@ public class TestZkProcessorLatch {
     Future f1 = pool.submit(
       () -> {
         String participant1 = "participant1";
-        ZkUtils zkUtils = getZkUtilsWithNewClient(participant1);
+        ZkUtils zkUtils = getZkUtilsWithNewClient();
         zkUtils.connect();
         Latch latch = new ZkProcessorLatch(latchSize, latchId, participant1, zkUtils);
         //latch.countDown(); only one thread counts down
@@ -214,7 +214,7 @@ public class TestZkProcessorLatch {
     }
 
   }
-  private ZkUtils getZkUtilsWithNewClient(String processorId) {
+  private ZkUtils getZkUtilsWithNewClient() {
     ZkConnection zkConnection = ZkUtils.createZkConnection(testZkConnectionString, SESSION_TIMEOUT_MS);
     return new ZkUtils(
         KEY_BUILDER,

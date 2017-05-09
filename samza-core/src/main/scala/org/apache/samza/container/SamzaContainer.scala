@@ -113,7 +113,7 @@ object SamzaContainer extends Logging {
     customReporters: Map[String, MetricsReporter] = Map[String, MetricsReporter](),
     taskFactory: Object) = {
     val containerId = containerModel.getProcessorId()
-    val containerName = "samza-container-%s" format containerId
+    val containerName = Util.getFormattedProcessorName(containerId)
 
     var localityManager: LocalityManager = null
     if (new ClusterManagerConfig(config).getHostAffinityEnabled()) {
