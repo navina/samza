@@ -103,14 +103,17 @@ public class TestZkStreamProcessorFailures extends StandaloneIntegrationTestHarn
     createTopics(inputTopic, outputTopic);
 
     // set number of events we expect to read by both processes in total:
-    // p1 will read messageCount/2 messages, then it will die.
-    // p2 will read messageCount/2 messages + numBadMessages/2 (those bad messages that ended up in p2's partitions),
-    // then a new job model will arrive
-    // and p2 will read messageCount messages again, + numBadMessages (all of them this time)
-    // total 2 x messageCount / 2 + messageCount + numBadMessages + numBadMessages/2
-    int totalEventsToGenerate = 2 * messageCount + numBadMessages + numBadMessages / 2;
+    // p1 will read messageCount/2 messages
+    // p2 will read messageCount/2 messages
+    // numBadMessages bad messages will be generated
+    // p2 will read 2 of them
+    // p1 will fail on the first of them
+    // a new job model will be generated
+    // and p2 will read all 2 * messageCount messages again, + numBadMessages (all of them this time)
+    // total 2 x messageCount / 2 + numBadMessages/2 + 2 * messageCount + numBadMessages
+    int totalEventsToBeConsumed = 3 * messageCount + numBadMessages + numBadMessages / 2;
 
-    TestStreamTask.endLatch = new CountDownLatch(totalEventsToGenerate);
+    TestStreamTask.endLatch = new CountDownLatch(totalEventsToBeConsumed);
     // create first processor
     CountDownLatch startCountDownLatch1 = new CountDownLatch(1);
     CountDownLatch stopCountDownLatch1 = new CountDownLatch(1);
@@ -144,10 +147,11 @@ public class TestZkStreamProcessorFailures extends StandaloneIntegrationTestHarn
     // make sure they consume all the messages
     int attempts = ATTEMPTS_NUMBER;
     while (attempts > 0) {
+      // we wait until messageCount is consumed
       long leftEventsCount = TestStreamTask.endLatch.getCount();
       System.out.println("left to read = " + leftEventsCount);
-      if (leftEventsCount == totalEventsToGenerate - messageCount ) { // read first batch
-        System.out.println("read all. left to read = " + leftEventsCount);
+      if (leftEventsCount == totalEventsToBeConsumed - messageCount) { // read first batch
+        System.out.println("read all available. left to read = " + leftEventsCount);
         break;
       }
       TestZkUtils.sleepMs(1000);
@@ -157,23 +161,6 @@ public class TestZkStreamProcessorFailures extends StandaloneIntegrationTestHarn
 
     // produce the bad messages
     produceMessages(BAD_MESSAGE_KEY, inputTopic, 4);
-
-
-    // wait until p2 consumes 2 bad messages
-    attempts = ATTEMPTS_NUMBER;
-    while (attempts > 0) {
-      long leftEventsCount = TestStreamTask.endLatch.getCount();
-      System.out.println("total left to read = " + leftEventsCount);
-      if (leftEventsCount == totalEventsToGenerate - messageCount - 2) {
-        System.out.println("2nd read all, left to read  = " + leftEventsCount);
-        break;
-      }
-      TestZkUtils.sleepMs(1000);
-      attempts--;
-    }
-    Assert.assertTrue("Didn't read all the leftover events in 5 attempts", attempts > 0);
-
-
 
     // wait for at least one full debounce time to let the system to publish and distribute the new job model
     TestZkUtils.sleepMs(3000);
@@ -204,11 +191,8 @@ public class TestZkStreamProcessorFailures extends StandaloneIntegrationTestHarn
     } catch (InterruptedException e) {
       Assert.fail("Failed to join finished thread:" + e.getLocalizedMessage());
     }
-    // processor1 and 2 will both read 20 events (total 40), and then processor2 read 80 events by itself,
-    // but the expected values are the same 0-79 - we should get each value one time.
-    // The number of events we gonna get is 40 + 80
-    // Plus numBadMessages read by p2
 
+    // number of unique values we gonna read is 0-(2*messageCount - 1) + numBadMessages
     Map<Integer, Boolean> expectedValues = new HashMap<>(2 * messageCount + numBadMessages);
     for (int i = 0; i < 2 * messageCount; i++) {
       expectedValues.put(i, false);
@@ -216,7 +200,8 @@ public class TestZkStreamProcessorFailures extends StandaloneIntegrationTestHarn
     for (int i = BAD_MESSAGE_KEY; i < numBadMessages + BAD_MESSAGE_KEY; i++) {
       expectedValues.put(i, false);
     }
-    verifyNumMessages(outputTopic, expectedValues, totalEventsToGenerate);
+
+    verifyNumMessages(outputTopic, expectedValues, totalEventsToBeConsumed);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
