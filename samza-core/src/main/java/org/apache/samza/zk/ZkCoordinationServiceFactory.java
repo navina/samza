@@ -18,6 +18,8 @@
  */
 package org.apache.samza.zk;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.samza.config.Config;
 import org.apache.samza.config.ZkConfig;

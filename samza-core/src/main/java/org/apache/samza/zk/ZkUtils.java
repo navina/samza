@@ -19,6 +19,8 @@
 
 package org.apache.samza.zk;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.I0Itec.zkclient.IZkChildListener;
 import org.I0Itec.zkclient.IZkDataListener;
 import org.I0Itec.zkclient.ZkClient;
@@ -85,10 +87,6 @@ public class ZkUtils {
     return new ZkConnection(zkConnectString, sessionTimeoutMs);
   }
 
-  public static ZkClient createZkClient(ZkConnection zkConnection, int connectionTimeoutMs) {
-    return new ZkClient(zkConnection, connectionTimeoutMs);
-  }
-
   ZkClient getZkClient() {
     return zkClient;
   }
@@ -127,13 +125,32 @@ public class ZkUtils {
    */
   public static ZkClient createZkClient(ZkConfig zkConfig) {
     try {
+      String zkConnect = zkConfig.getZkConnect();
       ZkClient zkClient = new ZkClient(zkConfig.getZkConnect(), zkConfig.getZkSessionTimeoutMs(), zkConfig.getZkConnectionTimeoutMs());
+      initZkPath(zkConnect, zkClient);
       return zkClient;
     } catch (Exception e) {
-      // ZkClient constructor may throw a varaity of different exceptions, not all of them Zk based.
+      // ZkClient constructor may throw a varity of different exceptions, not all of them Zk based.
       throw new SamzaException("zkClient failed to connect to ZK at :" + zkConfig.getZkConnect(), e);
     }
   }
+
+  public static void initZkPath(String zkConnect, ZkClient zkClient) {
+    try {
+      URI uri = new URI(zkConnect);
+      String path = uri.getPath();
+      if(!path.isEmpty()) {
+        // create this path in zk
+        // check if contains '/'
+        if(! zkClient.exists(path)) {
+          zkClient.createPersistent(path, true); // will create parents if needed and will not throw exception if exists
+        }
+      }
+    } catch (URISyntaxException e) {
+      e.printStackTrace();
+    }
+  }
+
 
   public synchronized String getEphemeralPath() {
     return ephemeralPath;

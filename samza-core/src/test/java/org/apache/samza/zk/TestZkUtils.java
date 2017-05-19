@@ -88,6 +88,14 @@ public class TestZkUtils {
   }
 
   @Test
+  public void testInitZkPath() {
+    String zkConnect = "127.0.0.1:" + zkServer.getPort() + "/samza1";
+    ZkUtils.initZkPath(zkConnect, zkClient);
+
+    Assert.assertTrue(zkClient.exists("/samza1"));
+  }
+
+  @Test
   public void testRegisterProcessorId() {
     String assignedPath = zkUtils.registerProcessorAndGetId(new ProcessorData("host", "1"));
     Assert.assertTrue(assignedPath.startsWith(KEY_BUILDER.getProcessorsPath()));
